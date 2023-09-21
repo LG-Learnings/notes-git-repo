@@ -1,0 +1,49 @@
+docker images    //check images
+docker build . -t savebank/accounts  //create image from docker file
+mvn  spring-boot:build-image         //create image from build packs
+docker image inspect imageId         //check image details
+
+
+*************************************************************
+
+docker run -p 8080:8080 savebank/accounts      //run container
+
+docker run -p 8081:8080 savebank/accounts      //run another instance of the same container
+
+docker run -d -p 8080:8080 savebank/accounts  //run without showing logs
+
+docker ps    //check all containers that are running
+
+
+*************************************************************
+
+docker container logs CONTAINERID     //check current log
+docker container logs -f CONTAINERID    //check current and ongoing logs
+
+**************************************************************
+docker stop cd34      //stop running container. will show logs to shutdown
+
+docker start fcv fcd   //start two services at the same time
+
+docker container pause cd34    //pause and servive wont take in any requests
+docker container unpause cd34   //unpause
+
+docker container inspect cd34   //check container details
+
+docker kill cd34  //emediately stop the container
+
+docker stats cd34   // will give you more container details and stats
+
+docker rm cd34    //completely remove the container and will have to create container from image again
+
+*******************************************************************
+
+docker tag accounts/savebank:latest lwazigxogxa/savebank:accountsSaveBankImage
+docker push lwazigxogxa/savebank:accountsSaveBankImage
+
+******************************************************************
+
+***Docker compose allows us to run all images with one command at the same time by writting a docker compose yml file
+
+docker-compose up   //run in the same folder of docker compose file
+docker-compose stop   //stop all containers

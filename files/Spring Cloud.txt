@@ -1,0 +1,113 @@
+Spring Cloud
+
+Problem
+1. A client need to remember all host address's for all microservices.
+2. How is the load being distributed to the service instances?
+3. All mricoservices need security. Its good practise to have a centralised security for all microservices.
+4. All microservices have their own configurations. Its best practise to have a central project for configuration
+5. Microservices communicate with each other and if M2 is down, M1 with throw trhow an exception because M1 did not get the response from M2.
+   M1 will respond to to API Getway with an error and API Getway responds to the client with an error. This is a waste of resources. 
+   M1 must not call M2 if M2 is down.
+6. Services and instances of services may be down and we need a way to know which ones are up and running
+7. M1 can call M2. We need loggings of the call hierarchy
+
+Solution
+1. Use API Gateway to accept requests from client and rout the requests to the appropriate microservice
+2. Use API Gateway for load balancing
+3. Use API Gateway for centralised security
+4. Use Spring cloud to create a central place for configuration
+5. Solve by implementing Circut Breaker pattern
+6. Use Service Registry and Service Discory to check which services are up and running
+7. Use Distributed tracing to get all the call hierarchy
+
+Spring cloud provide implementation for all the above features/patterns and we dont need to implement manual because its already 
+implemented by spring cloud.
+
+Some of the Spring Cloud models/features
+Spring Cloud Gateway
+Spring Cloud Circut Breaker
+Spring Cloud Config
+Spring Cloud OpenFeig - to make rest calls to other microservices
+Spring Cloud Sleuth - for Distributed tracing
+
+
+
+Service Registry (Spring Cloud Eureka Netflix)  responsibilities:
+1. It keeps track of all running instances of a service
+2. It allows services to discover each other (Specify only the service name you are requesting to (no need for a url) and eureka server
+   will forward the request to the correct instance)
+3. It provides load balancing (will direct queries to only up and running instances)
+
+API Gateway (Spring Cloud Getway) responsibilities:
+1. Route requests from clients to service (Clients dont have to rememeber port address for all services and instances. Clients dont need
+   to know all details of the micro services)
+2. Load balancing
+3. Central Security (all services need security and it is tedious to have security for each service. Client will authenticate with 
+   the API Gateway only and not for each and every service).
+
+How API Gateway works:
+Client will send a request to API Gateway.
+API Gateway will discover the correct IP address and port using Service Registry to communicate and route the request to the correct 
+micro service.
+
+
+Centralized Configuration (Spring Cloud Config Server)
+Problem 1: When updaing configuration file of a service, we need to restart the service and its instances
+Solution 1: No need to restart services with centralized configuration. Call the refresh endpoint to get the updated configurations
+Problem 2: Each service has its own configuration file. When updating we need to update all configuration file in all services.
+Solution 2: Make changes in one project (git repo)
+
+Spring Cloud Bus
+Problem: You need to refresh all the services and its instances to get the updated configurations (localhost:8080/actuator/refresh)
+Solution: Spring Cloud Bus module can be used to link multiple applications with a message brocker (i.e RabbitMQ) and we can broadcast
+          the configuration changes by hiting /busrefresh and rabbitmq will update all services without restarting them.
+          http://localhost:8080/actuator/busrefresh
+
+
+Distributed Tracing (Spring Cloud Sleuth and Zipkin)
+Problem: requests can be passed between micro services. response can be slow or services can be down.
+Solution: Use Distributed Tracing to trace request from start to finish. Also used to check how much time the service take to process and respond.
+
+************************************************************************
+****Circuit breaker using Resilience4J implementation****
+Problem: m1 calls m2 calls m3 calls m4.
+         If m4 is down, this will cuase failure in the call from m3 to m4. This will then affect all the other micro-services because of dependency
+Solution: 
+1. fallback - m3 will respond to m2 with a fallback response and m2 will respond to m1 with the fallback response
+2. circuit breker - this wont allow m3 to hit/call m4 continuously when m4 is down.
+3. retry - when m4 is down, we can implement a number of retries in m3 incase m4 responds.
+4. rate limit - This will limit the number of calls from m3 to m4
+
+How circuit breaker works?
+Example: circuit breaker is implemented in m3. m3 makes calls to m4.
+maintains 3 states (closed, open, half open): 
+Closed - both m3 and m4 are up and running. Circuit breaker will allow m3 to make calls to m4.
+         We maintain a threshold of 50% for example. If m3 makes 5 calls to m4 and only 2 passed and 3 failed, the circuit breaker will
+         move to open state.
+
+Open - We can set 5 seconds to be in a open state. Automatically after 5s, it will move to Half open state.
+       Everytime there is a failed results, circuit breaker moved to a open state and then after 5s, it automatically moved to half open state.
+
+Half Open - In this state, m3 is given a chance to make the calls again to m4. We can set the number of calls try to 3.
+            If we get 2 successful calls (PASSED), it will move to closed state.
+            If we get 2 unsuccessful calls (FAILED), it will move to Open state.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
