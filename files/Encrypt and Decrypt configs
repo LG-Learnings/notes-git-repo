@@ -1,0 +1,12 @@
+Add secret key in Configuration service
+E.g  encrypt.key=secreteKeyThatShouldBeKeptSafeInADifferentPlace
+
+Encrypt
+http://localhost:8888/encrypt
+Write text to encrypt in body of the request.
+Take the encrypted string and put it in configs file
+E.g   msg: "{cipher}66d8e0c52c7816b61e97b3dae7a029c1b8b946e42af4f1d3a03c361f4eb7ae79"
+
+Decrypt
+http://localhost:8888/decrypt
+Put the encrypted string in the body of the request

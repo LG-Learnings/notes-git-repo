@@ -1,0 +1,50 @@
+We need to restart a service after updating configurations.
+
+**** Actuator refresh endpoint ***********
+Run the bellow endpoint for each service and for each instance of the services.
+http://localhost:8085/actuator/refresh   Post method
+1. Add actuator dependency
+2. Expose endpoints actuator endpoints inside the service property file. Do not write this in external configs file.
+   E.g  management.endpoints.web.exposure.include=*
+Problem: You need to manually run the refresh endpoint for each instance and for each service
+
+**** Spring Cloud Bus ***********
+1. Add actuator dependency
+2. Expose busrefresh actuator endpoint inside the service property file. Do not write this in external configs file.
+    The bellow config should be fine
+   E.g  management.endpoints.web.exposure.include=*
+3. create rabbitMQ image (check online) and run the image. The bellow command should create and run the docker imaage
+    docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.12-management
+4. Add "spring-cloud-starter-bus-amqp" dependency in all microservices including Configuration service
+5. write RabbitMQ configs
+   spring.rabbitmq.host=localhost
+   spring.rabbitmq.port=5672
+   spring.rabbitmq.username=guest
+   spring.rabbitmq.password=guest
+6. http://localhost:8085/actuator/busrefresh
+   This will not only update this service and this instance, it will update all services and their instances that are
+   configured for the same RabbitMQ
+Problem: We still need to run http://localhost:8085/actuator/busrefresh manually.
+
+*** Spring cloud config monitor *******
+Whenever we push new changes in configs, the process will happen automatically and refresh all services without
+any manual intervention.
+1. Add "Spring cloud config monitor" dependency to the configuration service
+2. Expose the actuator endpoints in configuration service.
+    E.g  management.endpoints.web.exposure.include=*
+3. write RabbitMQ configs
+   spring.rabbitmq.host=localhost
+   spring.rabbitmq.port=5672
+   spring.rabbitmq.username=guest
+   spring.rabbitmq.password=guest
+4. In git-hub in the config files repo, create a web hook (settings,webhooks,addWebhook)
+    The purpose of the webhook is whenever there is a change inside the config repo, git-hub will publish an event
+    to the url you have configured and all this will happen automatically when you push new changes.
+5.  Under the Payload URl, we need to provide the url where the webhook request can be sent by git-hub.
+    Git-hub will not find/know the url if we provide localhost.
+    Use hookdeck.com site to test using localhost.
+    (Test webhook, add destination, follow instructions on the right, specify configuration service port when asked for port,
+    for path add "/monitor", connection label add "localhost")
+    You will given a Webhook url. Git-hub will use this url and will forward the requests to your localhost.
+    Add the url in Payload URL, content type is json and other settings is default.
+    Select "Add webhook"
