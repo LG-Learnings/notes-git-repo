@@ -1,0 +1,55 @@
+Spring security
+To authentication your api
+
+Add spring security dependency on your pom file, it generates a password for you to use so that you can access the rest api methods.
+You can override the generated password and useraname by specifying spring security username and password on application.property file.
+At this point the application provides form based authentication
+
+Basic authentication
+Implement Basic authentication because "form based authentication" belongs to web services.
+done in "SecurityConfig" class and "configure" method
+
+At this point we still use the unersame and password specified in the application.properties with basic authentication
+
+Now we want to have two users, "User" and "Admi". 
+User must not be able to create,update and delete Posts, they must only get the posts.
+
+In Memory authentication
+For this we can start by creating a In memory authentication where we specify the username, password and role for the two user("USRE,ADMIN).
+So the application first checks/authenticates the username and password, if they are incorrect, it throws an unauthorised exception.
+If its ussername and password are correction, it then checks the role.
+If the role is USER then you can only get posts. theis is specified in the post controller
+
+Database authentication
+Remember its in a good idea to use an In memory authentication, rather use database authentication.
+For database authentication, create USER and ROLE enteties/tables
+Since relationship between ROLE and USER is many to many, have a third joint table.
+Create USER and ROLE Repository and specify the needed methods. 
+create your interface and Impl class with the method of retrieving users with their roles from the DB using the methods in the Repository.
+Call the method in your Interface into ""SecurityConfig" " to accomodate the database authentication, and you can remove the IN MEMORY AUTHENTICATION.
+
+
+JWT(JASON WEB TOKEN)
+Client uses their credentials(username/password) to login. If login is successful, they are given a token that expires after a certain time.
+They use the token to make queries to the api unlike Basic Auth that uses the credentials every time they make a query which is not good for security.
+
+Advantages of JWT over Basic authentication:
+1 JWTs are generally specific to one service. Passwords (sadly) get reused all over.
+2 JWTs are time-limited, and expire. If you look at logs for user credentials, you will find a token which is useless because it expired.
+3 JWTs can be issued by one service and verified by another.can login with a defferent application(eg facebook, google) and your credentials can never been seen by the application you are using
+4 JWTs can be both secure and fast to verify.
+5 Relatedly, JWTs can be verified without a database lookup at all. 
+  Passwords, including ones sent in basic auth, can't. You can cache them, but that takes server-side resources and breaks down when you have a cluster of servers behind a load balancer. 
+  Thus, JWTs are much better for scaling to large numbers of users, where DB hits are relatively expensive and need to be minimized.
+6 Logging out a user who uses a JWT is simple. Rely on token expiring. with basic auth, user has to logout when they want.
+
+Implement JWT
+1 add JWT Dependency
+2 create jwtAuthenticationEntryPoint - to handle the exception that occured due to unautherised access from the client
+3 add JWT properties is application.properties file
+4 create JwtTokenProvider - create methods to generate JWT tokens
+5 create JwtAuthenticationFilter - garantees a single execution per request dispatch
+6 create JwtAuthResponse DTO
+7 Configure JWT in Spring Security Configuration - 
+  In the configuation, we specify the authenticationEntryPoint, specify the sessionCreatePolicy.stateless and added the JwtAuthenticationFilter
+8 Change login API to return token to client

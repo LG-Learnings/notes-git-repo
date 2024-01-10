@@ -1,0 +1,125 @@
+Swagger 3
+
+1.Add dependency(springfox) in pom file
+
+2.SecurityConfig.java
+   Specify Rest API that swagger exposes to get a json of swagger documentaion e.g.
+   .antMatchers("/v3/api-docs/**").permitAll()
+
+   on browser: localhost:8080/v3/api-docs
+
+3.To get a User Interface for our swagger documentation we need to permit the bellow URL's on SecurityConfig.java
+  .antMatchers("/swagger-ui/**").permitAll()
+  .antMatchers("/swagger-resources/**").permitAll()
+  .antMatchers("/swagger-ui.html").permitAll()
+  .antMatchers("/webjars/**").permitAll()
+
+   on browser: localhost:8080/swagger-ui
+
+4. To Customize(create Docket) (e.g title, description, version) your swagger documentation create class:
+   
+@Configuration
+public class SwaggerConfig {
+
+    private ApiInfo apiInfo(){
+        return new ApiInfo(
+                "Spring Boot Blog REST APIs",
+                "Spring Boot Blog REST API Documentation",
+                "1",
+                "Terms of service",
+                new Contact("Lwazi Gxogxa", "https://github.com/", "lwazigxogxa@gmail.com"),
+                "License of API",
+                "API license URL",
+                Collections.emptyList()
+        );
+    }
+
+    @Bean
+    public Docket api(){
+        return new Docket(DocumentationType.SWAGGER_2)
+                .apiInfo(apiInfo())
+                .select()
+                .apis(RequestHandlerSelectors.any()) //Selecting all Rest API's. You can also specify by selecting the package for the Rest SPI
+                .paths(PathSelectors.any())
+                .build();
+    }
+
+}
+
+You need to change swagger version from v3 to v2 on the securityConfig.java class so that it corresponds to the Docket  version
+.antMatchers("/v2/api-docs/**").permitAll()
+
+
+5.Configure Swagger UI to include JWT.
+  
+ Create Authorization: We use in the header of the Rest API
+ public static final String AUTHORIZATION_HEADER = "Authorization";
+
+ Create apiKey
+ private ApiKey apiKey(){
+        return new ApiKey("JWT", AUTHORIZATION_HEADER, "header");
+    }
+
+To enable authorization on swagger UI
+  private SecurityContext securityContext(){
+        return SecurityContext.builder().securityReferences(defaultAuth()).build();
+    }
+
+    private List<SecurityReference> defaultAuth(){
+        AuthorizationScope authorizationScope = new AuthorizationScope("global", "accessEverything");
+        AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
+        authorizationScopes[0] = authorizationScope;
+        return Arrays.asList(new SecurityReference("JWT", authorizationScopes));
+    }
+
+add securityContexts and securitySchemes:
+   @Bean
+    public Docket api(){
+        return new Docket(DocumentationType.SWAGGER_2)
+                .apiInfo(apiInfo())
+                .securityContexts(Arrays.asList(securityContext()))
+                .securitySchemes(Arrays.asList(apiKey()))
+                .select()
+                .apis(RequestHandlerSelectors.any())
+                .paths(PathSelectors.any())
+                .build();
+    }
+
+
+6. Customize Controller/API descriptions
+
+    Controller description:
+    @Api(value = "Auth controller exposes siginin and signup REST APIs")
+    E.g
+    @Api(value = "Auth controller exposes siginin and signup REST APIs")
+    @RestController
+    @RequestMapping("/api/auth")
+    public class AuthController {
+
+    API description:
+    @ApiOperation(value = "REST API to Signup user to Blog app")
+    E.g
+    @ApiOperation(value = "REST API to Signup user to Blog app")
+    @PostMapping("/signin")
+    public ResponseEntity<JWTAuthResponse> authenticateUser(@RequestBody LoginDto loginDto){
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                loginDto.getUsernameOrEmail(), loginDto.getPassword()));
+
+        // get token form tokenProvider
+        String token = tokenProvider.generateToken(authentication);
+
+        return ResponseEntity.ok(new JWTAuthResponse(token));
+    }
+
+
+7. Customise Model and its properties description
+   
+  Model description:
+  @ApiModel(description = "Post model information")
+  public class PostDto {
+
+  Model property description:
+  @ApiModelProperty(value = "Blog post id")
+  private long id;
+   
+   
